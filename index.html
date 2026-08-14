@@ -96,7 +96,7 @@
 
         const script = document.createElement("script");
         script.id = cbName;
-        script.src = `${BACKEND_URL}?action=getAppBundle&initData=${encodeURIComponent(initData)}&callback=${cbName}`;
+        script.src = `${BACKEND_URL}?action=getAppBundle&callback=${cbName}&initData=${encodeURIComponent(initData)}`;
         script.onerror = function () {
           document.getElementById("app").innerHTML =
             `<div style="padding:20px; color:#ef4444; text-align:center;">Network Error</div>`;
