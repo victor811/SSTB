@@ -89,29 +89,31 @@
               document.getElementById("app").innerHTML = payload.html;
             }
 
-            // 3. Скрипт
+           // 3. Очищаем и исполняем JS
             if (payload.js) {
+              // Автоматически вырезаем теги <script> и </script>, если они случайно остались в файле
+              const cleanJs = payload.js.replace(/<\/?script[^>]*>/gi, "").trim();
+
               try {
-                const script = document.createElement("script");
-                script.textContent = payload.js;
-                document.body.appendChild(script);
+                // Выполняем код в глобальном контексте
+                window.eval(cleanJs);
               } catch (jsErr) {
-                showVisualError("Ошибка в коде AppJs: " + jsErr.message);
+                // Если в AppJs есть синтаксическая ошибка — выводим её точный текст!
+                showVisualError("Ошибка в AppJs: " + jsErr.message);
+                console.error("Сбой выполнения AppJs:", jsErr);
                 return;
               }
             }
 
-            // 4. Безопасный запуск отрисовки
+            // 4. Вызов инициализации
             try {
               if (typeof window.initAppUI === "function") {
                 window.initAppUI();
               } else {
-                showVisualError(
-                  "Функция initAppUI не найдена (проверьте отсутствие тегов <script> в AppJs)",
-                );
+                showVisualError("initAppUI не объявлен в window (проверьте AppJs.html)");
               }
             } catch (err) {
-              showVisualError("Ошибка выполнения initAppUI: " + err.message);
+              showVisualError("Ошибка внутри initAppUI: " + err.message);
             }
           } else {
             showVisualError(payload?.error || "Ошибка загрузки данных");
