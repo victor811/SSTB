@@ -76,7 +76,9 @@
 
           if (payload && payload.success) {
             window.globalData = payload.data;
-
+            // Обязательно передаем globalData в функцию!
+            window.initAppUI(window.globalData);
+            
             // 1. Стили
             if (payload.css) {
               const style = document.createElement("style");
