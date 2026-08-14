@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        background-color: #121212;
+        color: #ffffff;
+        font-family: sans-serif;
+      }
+      #shell-loader {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+      }
+      .spinner {
+        width: 32px;
+        height: 32px;
+        border: 3px solid #333;
+        border-top-color: #3b82f6;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app">
+      <div id="shell-loader">
+        <div class="spinner"></div>
+      </div>
+    </div>
+
+    <script>
+      // Вставьте URL вашего опубликованного скрипта (exec)
+      const BACKEND_URL = "https://script.google.com/macros/s/ВАШ_EXEC_ID/exec";
+
+      (function bootstrap() {
+        if (window.Telegram && window.Telegram.WebApp) {
+          Telegram.WebApp.ready();
+          Telegram.WebApp.expand();
+        }
+
+        const initData =
+          window.Telegram && window.Telegram.WebApp
+            ? window.Telegram.WebApp.initData
+            : "";
+        const cbName = "jsonp_cb_" + Date.now();
+
+        window[cbName] = function (payload) {
+          delete window[cbName];
+          const scriptEl = document.getElementById(cbName);
+          if (scriptEl) scriptEl.remove();
+
+          if (payload && payload.success) {
+            // Сохраняем полученные данные глобально
+            window.globalData = payload.data;
+
+            // 1. Внедряем стили CSS
+            if (payload.css) {
+              const style = document.createElement("style");
+              style.textContent = payload.css;
+              document.head.appendChild(style);
+            }
+
+            // 2. Внедряем HTML разметку
+            if (payload.html) {
+              document.getElementById("app").innerHTML = payload.html;
+            }
+
+            // 3. Внедряем и исполняем JS
+            if (payload.js) {
+              const script = document.createElement("script");
+              script.textContent = payload.js;
+              document.body.appendChild(script);
+            }
+          } else {
+            document.getElementById("app").innerHTML =
+              `<div style="padding:20px; color:#ef4444; text-align:center;">${payload?.error || "Access Denied"}</div>`;
+          }
+        };
+
+        const script = document.createElement("script");
+        script.id = cbName;
+        script.src = `${BACKEND_URL}?action=getAppBundle&initData=${encodeURIComponent(initData)}&callback=${cbName}`;
+        script.onerror = function () {
+          document.getElementById("app").innerHTML =
+            `<div style="padding:20px; color:#ef4444; text-align:center;">Network Error</div>`;
+        };
+        document.body.appendChild(script);
+      })();
+    </script>
+  </body>
+</html>
