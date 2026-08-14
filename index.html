@@ -45,65 +45,80 @@
       </div>
     </div>
 
-    <script>
-      const BACKEND_URL = "https://script.google.com/macros/s/AKfycbx8oIQAjHgwnjYa6pQohLFM8AXGmk5Uvjlhbn5HvFxqri5rCwBwIqs6SPvVEzkBgmbu/exec";
+  <script>
+    const BACKEND_URL = "https://script.google.com/macros/s/AKfycbx8oIQAjHgwnjYa6pQohLFM8AXGmk5Uvjlhbn5HvFxqri5rCwBwIqs6SPvVEzkBgmbu/exec";
 
-      (function bootstrap() {
-        if (window.Telegram && window.Telegram.WebApp) {
-          Telegram.WebApp.ready();
-          Telegram.WebApp.expand();
-        }
+    function showVisualError(msg) {
+      const badge = document.getElementById("status-badge");
+      if (badge) {
+        badge.style.background = "#ef4444";
+        badge.innerText = "🔴 " + msg;
+      } else {
+        document.getElementById("app").innerHTML =
+          `<div style="padding:20px; color:#ef4444; text-align:center; font-family:sans-serif;">${msg}</div>`;
+      }
+    }
 
-        const initData = window.Telegram?.WebApp?.initData || "";
-        const cbName = "jsonp_cb_" + Date.now();
+    (function bootstrap() {
+      if (window.Telegram && window.Telegram.WebApp) {
+        Telegram.WebApp.ready();
+        Telegram.WebApp.expand();
+      }
 
-        window[cbName] = function (payload) {
-          delete window[cbName];
-          const scriptEl = document.getElementById(cbName);
-          if (scriptEl) scriptEl.remove();
+      const initData = window.Telegram?.WebApp?.initData || "";
+      const cbName = "jsonp_cb_" + Date.now();
 
-          if (payload && payload.success) {
-            // 1. Сохраняем данные портфеля
-            window.globalData = payload.data;
+      window[cbName] = function (payload) {
+        delete window[cbName];
+        const scriptEl = document.getElementById(cbName);
+        if (scriptEl) scriptEl.remove();
 
-            // 2. Внедряем CSS
-            if (payload.css) {
-              const style = document.createElement("style");
-              style.textContent = payload.css;
-              document.head.appendChild(style);
-            }
+        if (payload && payload.success) {
+          window.globalData = payload.data;
 
-            // 3. Внедряем HTML
-            if (payload.html) {
-              document.getElementById("app").innerHTML = payload.html;
-            }
-
-            // 4. Внедряем JS и принудительно запускаем UI
-            if (payload.js) {
-              const script = document.createElement("script");
-              script.textContent = payload.js;
-              document.body.appendChild(script);
-
-              // Явный запуск рендеринга
-              if (typeof window.initAppUI === "function") {
-                window.initAppUI();
-              }
-            }
-          } else {
-            document.getElementById("app").innerHTML =
-              `<div style="padding:20px; color:#ef4444; text-align:center;">${payload?.error || "Ошибка доступа"}</div>`;
+          // 1. Стили
+          if (payload.css) {
+            const style = document.createElement("style");
+            style.textContent = payload.css;
+            document.head.appendChild(style);
           }
-        };
 
-        const script = document.createElement("script");
-        script.id = cbName;
-        script.src = `${BACKEND_URL}?action=getAppBundle&callback=${cbName}&initData=${encodeURIComponent(initData)}`;
-        script.onerror = function () {
-          document.getElementById("app").innerHTML =
-            `<div style="padding:20px; color:#ef4444; text-align:center;">Network Error</div>`;
-        };
-        document.body.appendChild(script);
-      })();
-    </script>
+          // 2. Разметка
+          if (payload.html) {
+            document.getElementById("app").innerHTML = payload.html;
+          }
+
+          // 3. Скрипт
+          if (payload.js) {
+            const script = document.createElement("script");
+            script.textContent = payload.js;
+            document.body.appendChild(script);
+          }
+
+          // 4. Безопасный запуск отрисовки
+          try {
+            if (typeof window.initAppUI === "function") {
+              window.initAppUI();
+            } else {
+              showVisualError("Функция initAppUI не найдена");
+            }
+          } catch (err) {
+            showVisualError("Ошибка JS: " + err.message);
+          }
+
+        } else {
+          showVisualError(payload?.error || "Ошибка загрузки данных");
+        }
+      };
+
+      const script = document.createElement("script");
+      script.id = cbName;
+      script.src = `${BACKEND_URL}?action=getAppBundle&callback=${cbName}&initData=${encodeURIComponent(initData)}`;
+      script.onerror = function () {
+        showVisualError("Ошибка сети (Network Error)");
+      };
+      document.body.appendChild(script);
+    })();
+  </script>
   </body>
 </html>
