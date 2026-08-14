@@ -46,7 +46,6 @@
     </div>
 
     <script>
-      // Вставьте URL вашего опубликованного скрипта (exec)
       const BACKEND_URL = "https://script.google.com/macros/s/AKfycbx8oIQAjHgwnjYa6pQohLFM8AXGmk5Uvjlhbn5HvFxqri5rCwBwIqs6SPvVEzkBgmbu/exec";
 
       (function bootstrap() {
@@ -55,10 +54,7 @@
           Telegram.WebApp.expand();
         }
 
-        const initData =
-          window.Telegram && window.Telegram.WebApp
-            ? window.Telegram.WebApp.initData
-            : "";
+        const initData = window.Telegram?.WebApp?.initData || "";
         const cbName = "jsonp_cb_" + Date.now();
 
         window[cbName] = function (payload) {
@@ -67,34 +63,35 @@
           if (scriptEl) scriptEl.remove();
 
           if (payload && payload.success) {
-            // Сохраняем полученные данные глобально
+            // 1. Сохраняем данные портфеля
             window.globalData = payload.data;
 
-            // 1. Внедряем стили CSS
+            // 2. Внедряем CSS
             if (payload.css) {
               const style = document.createElement("style");
               style.textContent = payload.css;
               document.head.appendChild(style);
             }
 
-            // 2. Внедряем HTML разметку
+            // 3. Внедряем HTML
             if (payload.html) {
               document.getElementById("app").innerHTML = payload.html;
             }
 
-            // 3. Внедряем и исполняем JS
+            // 4. Внедряем JS и принудительно запускаем UI
             if (payload.js) {
               const script = document.createElement("script");
               script.textContent = payload.js;
               document.body.appendChild(script);
-              // Явный запуск инициализации UI после загрузки скрипта
-              if (typeof initAppUI === "function") {
-                initAppUI();
+
+              // Явный запуск рендеринга
+              if (typeof window.initAppUI === "function") {
+                window.initAppUI();
               }
             }
           } else {
             document.getElementById("app").innerHTML =
-              `<div style="padding:20px; color:#ef4444; text-align:center;">${payload?.error || "Access Denied"}</div>`;
+              `<div style="padding:20px; color:#ef4444; text-align:center;">${payload?.error || "Ошибка доступа"}</div>`;
           }
         };
 
