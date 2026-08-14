@@ -89,35 +89,32 @@
               document.getElementById("app").innerHTML = payload.html;
             }
 
-           // 3. Очищаем и исполняем JS
+           // 3. Безопасное исполнение JS из AppJs
             if (payload.js) {
-              // Автоматически вырезаем теги <script> и </script>, если они случайно остались в файле
-              const cleanJs = payload.js.replace(/<\/?script[^>]*>/gi, "").trim();
-
               try {
-                // Выполняем код в глобальном контексте
-                window.eval(cleanJs);
+                // Очищаем код от случайных тегов <script>
+                const cleanJs = payload.js.replace(/<\/?script[^>]*>/gi, "").trim();
+
+                // new Function отлавливает SyntaxError прямо внутри try...catch!
+                const executeBundle = new Function(cleanJs);
+                executeBundle();
               } catch (jsErr) {
-                // Если в AppJs есть синтаксическая ошибка — выводим её точный текст!
-                showVisualError("Ошибка в AppJs: " + jsErr.message);
-                console.error("Сбой выполнения AppJs:", jsErr);
+                showVisualError("Синтаксис AppJs: " + jsErr.message);
+                console.error("Ошибка в AppJs:", jsErr);
                 return;
               }
             }
 
-            // 4. Вызов инициализации
+            // 4. Вызов инициализации интерфейса
             try {
               if (typeof window.initAppUI === "function") {
                 window.initAppUI();
               } else {
-                showVisualError("initAppUI не объявлен в window (проверьте AppJs.html)");
+                showVisualError("initAppUI не объявлен в window");
               }
             } catch (err) {
-              showVisualError("Ошибка внутри initAppUI: " + err.message);
+              showVisualError("Ошибка initAppUI: " + err.message);
             }
-          } else {
-            showVisualError(payload?.error || "Ошибка загрузки данных");
-          }
         };
 
         const script = document.createElement("script");
