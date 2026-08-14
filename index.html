@@ -87,6 +87,10 @@
               const script = document.createElement("script");
               script.textContent = payload.js;
               document.body.appendChild(script);
+              // Явный запуск инициализации UI после загрузки скрипта
+              if (typeof initAppUI === "function") {
+                initAppUI();
+              }
             }
           } else {
             document.getElementById("app").innerHTML =
