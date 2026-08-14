@@ -89,13 +89,10 @@
               document.getElementById("app").innerHTML = payload.html;
             }
 
-           // 3. Безопасное исполнение JS из AppJs
+            // 3. Безопасное исполнение JS из AppJs
             if (payload.js) {
               try {
-                // Очищаем код от случайных тегов <script>
                 const cleanJs = payload.js.replace(/<\/?script[^>]*>/gi, "").trim();
-
-                // new Function отлавливает SyntaxError прямо внутри try...catch!
                 const executeBundle = new Function(cleanJs);
                 executeBundle();
               } catch (jsErr) {
@@ -115,7 +112,10 @@
             } catch (err) {
               showVisualError("Ошибка initAppUI: " + err.message);
             }
-        };
+          } else {
+            showVisualError(payload?.error || "Ошибка загрузки данных бэкенда");
+          }
+        }; // <-- Вот здесь была пропущена закрывающая скобка и точка с запятой!
 
         const script = document.createElement("script");
         script.id = cbName;
