@@ -76,9 +76,7 @@
 
           if (payload && payload.success) {
             window.globalData = payload.data;
-            // Обязательно передаем globalData в функцию!
-            window.initAppUI(window.globalData);
-            
+
             // 1. Стили
             if (payload.css) {
               const style = document.createElement("style");
@@ -107,7 +105,7 @@
             // 4. Вызов инициализации интерфейса
             try {
               if (typeof window.initAppUI === "function") {
-                window.initAppUI();
+                window.initAppUI(window.globalData);
               } else {
                 showVisualError("initAppUI не объявлен в window");
               }
