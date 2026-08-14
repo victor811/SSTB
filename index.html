@@ -45,80 +45,87 @@
       </div>
     </div>
 
-  <script>
-    const BACKEND_URL = "https://script.google.com/macros/s/AKfycbx8oIQAjHgwnjYa6pQohLFM8AXGmk5Uvjlhbn5HvFxqri5rCwBwIqs6SPvVEzkBgmbu/exec";
+    <script>
+      const BACKEND_URL =
+        "https://script.google.com/macros/s/AKfycbx8oIQAjHgwnjYa6pQohLFM8AXGmk5Uvjlhbn5HvFxqri5rCwBwIqs6SPvVEzkBgmbu/exec";
 
-    function showVisualError(msg) {
-      const badge = document.getElementById("status-badge");
-      if (badge) {
-        badge.style.background = "#ef4444";
-        badge.innerText = "🔴 " + msg;
-      } else {
-        document.getElementById("app").innerHTML =
-          `<div style="padding:20px; color:#ef4444; text-align:center; font-family:sans-serif;">${msg}</div>`;
-      }
-    }
-
-    (function bootstrap() {
-      if (window.Telegram && window.Telegram.WebApp) {
-        Telegram.WebApp.ready();
-        Telegram.WebApp.expand();
-      }
-
-      const initData = window.Telegram?.WebApp?.initData || "";
-      const cbName = "jsonp_cb_" + Date.now();
-
-      window[cbName] = function (payload) {
-        delete window[cbName];
-        const scriptEl = document.getElementById(cbName);
-        if (scriptEl) scriptEl.remove();
-
-        if (payload && payload.success) {
-          window.globalData = payload.data;
-
-          // 1. Стили
-          if (payload.css) {
-            const style = document.createElement("style");
-            style.textContent = payload.css;
-            document.head.appendChild(style);
-          }
-
-          // 2. Разметка
-          if (payload.html) {
-            document.getElementById("app").innerHTML = payload.html;
-          }
-
-          // 3. Скрипт
-          if (payload.js) {
-            const script = document.createElement("script");
-            script.textContent = payload.js;
-            document.body.appendChild(script);
-          }
-
-          // 4. Безопасный запуск отрисовки
-          try {
-            if (typeof window.initAppUI === "function") {
-              window.initAppUI();
-            } else {
-              showVisualError("Функция initAppUI не найдена");
-            }
-          } catch (err) {
-            showVisualError("Ошибка JS: " + err.message);
-          }
-
+      function showVisualError(msg) {
+        const badge = document.getElementById("status-badge");
+        if (badge) {
+          badge.style.background = "#ef4444";
+          badge.innerText = "🔴 " + msg;
         } else {
-          showVisualError(payload?.error || "Ошибка загрузки данных");
+          document.getElementById("app").innerHTML =
+            `<div style="padding:20px; color:#ef4444; text-align:center; font-family:sans-serif;">${msg}</div>`;
         }
-      };
+      }
 
-      const script = document.createElement("script");
-      script.id = cbName;
-      script.src = `${BACKEND_URL}?action=getAppBundle&callback=${cbName}&initData=${encodeURIComponent(initData)}`;
-      script.onerror = function () {
-        showVisualError("Ошибка сети (Network Error)");
-      };
-      document.body.appendChild(script);
-    })();
-  </script>
+      (function bootstrap() {
+        if (window.Telegram && window.Telegram.WebApp) {
+          Telegram.WebApp.ready();
+          Telegram.WebApp.expand();
+        }
+
+        const initData = window.Telegram?.WebApp?.initData || "";
+        const cbName = "jsonp_cb_" + Date.now();
+
+        window[cbName] = function (payload) {
+          delete window[cbName];
+          const scriptEl = document.getElementById(cbName);
+          if (scriptEl) scriptEl.remove();
+
+          if (payload && payload.success) {
+            window.globalData = payload.data;
+
+            // 1. Стили
+            if (payload.css) {
+              const style = document.createElement("style");
+              style.textContent = payload.css;
+              document.head.appendChild(style);
+            }
+
+            // 2. Разметка
+            if (payload.html) {
+              document.getElementById("app").innerHTML = payload.html;
+            }
+
+            // 3. Скрипт
+            if (payload.js) {
+              try {
+                const script = document.createElement("script");
+                script.textContent = payload.js;
+                document.body.appendChild(script);
+              } catch (jsErr) {
+                showVisualError("Ошибка в коде AppJs: " + jsErr.message);
+                return;
+              }
+            }
+
+            // 4. Безопасный запуск отрисовки
+            try {
+              if (typeof window.initAppUI === "function") {
+                window.initAppUI();
+              } else {
+                showVisualError(
+                  "Функция initAppUI не найдена (проверьте отсутствие тегов <script> в AppJs)",
+                );
+              }
+            } catch (err) {
+              showVisualError("Ошибка выполнения initAppUI: " + err.message);
+            }
+          } else {
+            showVisualError(payload?.error || "Ошибка загрузки данных");
+          }
+        };
+
+        const script = document.createElement("script");
+        script.id = cbName;
+        script.src = `${BACKEND_URL}?action=getAppBundle&callback=${cbName}&initData=${encodeURIComponent(initData)}`;
+        script.onerror = function () {
+          showVisualError("Ошибка сети (Network Error)");
+        };
+        document.body.appendChild(script);
+      })();
+    </script>
   </body>
 </html>
